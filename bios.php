@@ -2,18 +2,6 @@
     session_start();
     include("encryption.php");
     $username = decrypt($_SESSION['uid']);
-    if (!isset($_POST['logout']) && isset($_SESSION['logged']) && $_SESSION['logged'] == 'true') {
-        if (isset($_COOKIE[$username])){
-            $current = decrypt($_COOKIE[$username]);
-            $value_cookie = (int)$current;
-            $value_cookie += 1;
-            $_COOKIE[$username] = encrypt($value_cookie);
-            unset($_SESSION['logged']);
-        } else {
-            $value_cookie = 1;
-            setrawcookie($username, encrypt(strval($value_cookie)));
-        }
-    }
     if (!isset($username)) {
         header("Location: login.php?unauth");   
     } 
@@ -23,6 +11,7 @@
     } elseif (isset($_POST['viewImage'])) {
         header("Location: view_images.php?view");
     }
+    $times = decrypt($_COOKIE[$username]);
     include("header.php");
     require_once('connect.php');
 ?>
@@ -36,7 +25,7 @@
             if (decrypt($_COOKIE[$username]) == "1") {
                 echo '<p style="color: black;" class = "para"> This is your first login today.</p>';
             } else {
-                echo '<p style="color: black;" class = "para">You logged in ' . decrypt($_COOKIE[$username]) . ' times today.</p>';
+                echo '<p style="color: black;" class = "para">You logged in ' . $times . ' times today.</p>';
             }
             $profilePath = mysqli_fetch_row(mysqli_query($conn, "SELECT profilePath FROM users WHERE username = '{$username}'"));
             $defaultPath = "profile/default.png";

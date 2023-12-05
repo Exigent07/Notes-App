@@ -23,6 +23,17 @@
                     header("Location: admin.php");
                 } else {
                     $_SESSION['uid'] = encrypt($user);
+                    $username = $user;
+                    if (isset($_COOKIE[$username])){
+                        $current = decrypt($_COOKIE[$username]);
+                        $value_cookie = ((int)$current) + 1;
+                        unset($_COOKIE[$username]);
+                        setrawcookie($username, encrypt(strval($value_cookie)));
+                        echo decrypt($_COOKIE[$username]);
+                    } else {
+                        $value_cookie = 1;
+                        setrawcookie($username, encrypt(strval($value_cookie)));
+                    }
                     $_SESSION['logged'] = 'true';
                     header("Location: bios.php");
                 }
