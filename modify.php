@@ -3,7 +3,7 @@
     $username = $_SESSION['admin'];
     $path = "uploads/";
     require_once('connect.php');
-    if (!isset($username) && $username == md5("admin")) {
+    if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
         header("Location: login.php?unauth");   
     }
     if (isset($_POST['logout'])) {

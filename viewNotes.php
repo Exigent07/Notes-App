@@ -2,11 +2,14 @@
     session_start();
     include("encryption.php");
     $username = decrypt($_SESSION['uid']);
-    if (!isset($username)) {
+    if (!isset($username) || $username == "") {
         header("Location: login.php?unauth");   
     }
 
-    if (isset($_POST['goBack'])) {
+    if (isset($_POST['logout'])) {
+        session_destroy();
+        header("Location: login.php?loggedout");
+    }  elseif (isset($_POST['goBack'])) {
         header("Location: view_images.php?view");
     }
     include("header.php");

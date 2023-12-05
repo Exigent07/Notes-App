@@ -3,7 +3,7 @@
     include("encryption.php");
     $username = decrypt($_SESSION['uid']);
 
-    if (!isset($username)) {
+    if (!isset($username) || $username == "") {
         header("Location: login.php?unauth");   
     }
     if (isset($_POST['logout'])) {
@@ -17,7 +17,7 @@
 <body>
     <?php include("nav.php"); ?>    
     <div class="main">
-        <h1 style="color: black;">Your Text Files</h1>
+        <p class="head" style="color: black;">Your Text Files</p>
         <form action="viewNotes.php" method="post" class="form_css">
         <?php 
              if (isset($_GET['view'])) {
@@ -40,7 +40,7 @@
                         }
                     } else {
                         $filelabel = basename($result);
-                        echo '<form action="viewNotes.php" method="post" class="form_css" class="viewAll"><h3>' . $filelabel . '</h3><p class="showNote"><input type="hidden" name="pathValue"  value=' . "'" . $result[0] . "'" . '>' . filter_var(nl2br(file_get_contents($result)), FILTER_SANITIZE_STRING) . '</p><button vlaue="viewIt" class="btn">View Note</button></form>';
+                        echo '<form action="viewNotes.php" method="post" class="form_css" class="viewAll"><h3>' . $filelabel . '</h3><p class="showNote"><input type="hidden" name="pathValue"  value=' . "'" . $result . "'" . '>' . filter_var(nl2br(file_get_contents($result)), FILTER_SANITIZE_STRING) . '</p><button vlaue="viewIt" class="btn">View Note</button></form>';
                     }
                 } else  {
                     echo '<p style="color: black;" class = "error">Nothing to Show!</p>';

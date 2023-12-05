@@ -19,6 +19,9 @@
         if (!preg_match($regex, $_POST['password'])) {
             header("Location: register.php?notValid=");
             die();
+        } elseif (preg_match("/\s/", $user)) {
+            header("Location: register.php?space");
+            die();
         } elseif (!in_array(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION), $ext) && !isset($file) ) {
             header("Location: register.php?notAllowed");
             die();
@@ -85,6 +88,8 @@
                 echo '<p style="color: black;" class = "error para">Not a valid Image file</p>';
             } elseif (isset($_GET['large'])) {
                 echo '<p style="color: black;" class = "error para">File size exceeded (500kB)</p>';   
+            } elseif (isset($_GET['space'])) {
+                echo '<p style="color: black;" class = "error para">Username cannot have space</p>';   
             }
         ?>
             <div class="nameDiv">

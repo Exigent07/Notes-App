@@ -1,6 +1,10 @@
 <?php 
     session_start();
-    if (!isset($_SESSION['admin']) && $_SESSION['admin'] == md5("admin")) {
+    // echo isset($_SESSION['admin']) . "<br>";
+    // echo $_SESSION['admin'] . "<br>";
+    // echo md5('admin');
+
+    if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
         header("Location: login.php?unauth");   
     }
     if (isset($_POST['logout'])) {

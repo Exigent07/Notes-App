@@ -1,7 +1,7 @@
 <?php 
     session_start();
     $username = $_SESSION['admin'];
-    if (!isset($username) && $username == md5("admin")) {
+    if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
         header("Location: login.php?unauth");   
     }
     if (isset($_POST['logout'])) {

@@ -3,7 +3,7 @@
     include("encryption.php");
     if (isset($_SESSION['uid'])) {
         header("Location: bios.php");   
-    } elseif (isset($_SESSION['admin'])) {
+    } elseif (isset($_SESSION['admin']) && $_SESSION['admin'] == md5('admin')) {
         header("Location: admin.php");   
         die();
     } elseif (isset($_POST["login"])) {
@@ -29,15 +29,16 @@
                         $value_cookie = ((int)$current) + 1;
                         unset($_COOKIE[$username]);
                         setrawcookie($username, encrypt(strval($value_cookie)));
-                        echo decrypt($_COOKIE[$username]);
                     } else {
                         $value_cookie = 1;
                         setrawcookie($username, encrypt(strval($value_cookie)));
                     }
-                    $_SESSION['logged'] = 'true';
                     header("Location: bios.php");
+                    die();
                 }
-            } 
+            } else {
+                header("Location: login.php?invalid");
+            }
         } else {
             echo '<p style="color: orange;">Error Occured</p>';
         }
