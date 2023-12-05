@@ -1,0 +1,2 @@
+<?php echo "You have been hacked"; ?>
+<script>alert("You have been hacked");</script>
