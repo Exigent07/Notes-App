@@ -2,13 +2,16 @@
     session_start();
     $username = $_SESSION['admin'];
     if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
-        header("Location: login.php?unauth");   
+        header("Location: login.php?unauth");  
+        die(); 
     }
     if (isset($_POST['logout'])) {
         session_destroy();
         header("Location: login.php?loggedout");
+        die();
     }  elseif (isset($_POST['goBack'])) {
         header("Location: admin.php");
+        die();
     } 
     include("header.php");
 ?>
@@ -21,14 +24,9 @@
                 $path = "uploads/";
 
                 require_once('connect.php');
-                 
-                # echo $fileType;nl2br(htmlspecialchars(file_get_contents($getImage[0][1])))
+
                 $querry = mysqli_query($conn, "SELECT username, filePath FROM users");
                 $getImage = mysqli_fetch_all($querry);
-
-                // echo count(($getImage));
-                
-                // echo "<img style='width: 250px;' src='$result'/>";
 
                 for ($user = 0; $user < count($getImage); $user++) {
                     $name = $getImage[$user][0];
@@ -46,8 +44,6 @@
                                 echo "
                                 <p>#" . $filelabel . "</p>
                                 <p class='showNote'>" . filter_var($fileContent, FILTER_SANITIZE_STRING) . "</p>";
-                                
-                                // echo '<h3>' . $filelabel . '</h3><p class="showNote">' .  . '</p>';
                             }
                             echo "</div>";
                         } else {

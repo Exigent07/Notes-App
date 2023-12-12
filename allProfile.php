@@ -3,12 +3,15 @@
     $username = $_SESSION['admin'];
     if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
         header("Location: login.php?unauth=");   
+        die(); 
     }
     if (isset($_POST['logout'])) {
         session_destroy();
         header("Location: login.php?loggedout");
+        die(); 
     }  elseif (isset($_POST['goBack'])) {
         header("Location: admin.php");
+        die(); 
     } 
     include("header.php");
 

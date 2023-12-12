@@ -1,19 +1,24 @@
 <?php 
-    session_start();
-    $username = $_SESSION['admin'];
-    $path = "uploads/";
-    require_once('connect.php');
-    if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
-        header("Location: login.php?unauth");   
-    }
-    if (isset($_POST['logout'])) {
-        session_destroy();
-        header("Location: login.php?loggedout");
-    }  elseif (isset($_POST['goBack'])) {
-        header("Location: admin.php");
-    }
-    include("header.php");
+require_once('Helpers/connect.php');
+require_once('Helpers/encryption.php');
+require_once('Helpers/functions.php');
 
+session_start();
+$username = $_SESSION['admin'];
+$path = "uploads/";
+if (!isset($_SESSION['admin']) || !decrypt($_SESSION['admin']) == "admin") {
+    header("Location: login.php?unauth");   
+    die(); 
+}
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: login.php?loggedout");
+    die(); 
+}  elseif (isset($_POST['goBack'])) {
+    header("Location: admin.php");
+    die(); 
+}
+require_once("Helpers/header.php");
 ?>
 <body>
     <div class="main">
@@ -22,85 +27,94 @@
         <?php 
             if (isset($_POST['deleteUserBtn'])) {
                 $gotUsername = $_POST['usernameDelete'];
-                if ($gotUsername == "admin") {
+                if ($gotUsername === "admin") {
                     echo '<p style="color: black;" class = "error">Unable to Delete User</p>';
-                } else {
-                    $sqlQuery = "DELETE FROM users WHERE username = '$gotUsername'";
-                    $result = mysqli_query($conn, $sqlQuery);
-    
+                } 
+                else {
+                    $sqlQuery = "DELETE FROM users WHERE username = ?";
+                    $result = delete_or_update($conn, $sqlQuery, $gotUsername);
+                    
                     if ($result) {
                         echo '<p style="color: black;" class = "upload">User Deleted</p>';
-                    } else {
+                    } 
+                    else {
                         echo '<p style="color: black;" class = "error">Unable to Delete User</p>';
                     }
                 }
 
-            } elseif (isset($_POST['deleteChangeBtn'])) {
+            } 
+            elseif (isset($_POST['deleteChangeBtn'])) {
                 $gotUsername = $_POST['usernameChange'];
                 $changeName = $_POST['changeName'];
 
-                $sqlQuery = "UPDATE users SET username = '$changeName' WHERE username = '$gotUsername'";
-                $result = mysqli_query($conn, $sqlQuery);
+                $sqlQuery = "UPDATE users SET username = ? WHERE username = ?";
+                $result = delete_or_update($conn, $sqlQuery, array($changeName, $gotUsername));
 
                 if ($result) {
                     echo '<p style="color: black;" class = "upload">Username Changed</p>';
-                } else {
+                } 
+                else {
                     echo '<p style="color: black;" class = "error">Unable to Delete User</p>';
                 }
             } elseif (isset($_POST['deleteimageBtn'])) {
                 $gotUsername = $_POST['imageDelete'];
                 $noteName = $_POST['noteName'];
+                $sqlQuery = "SELECT * FROM `$gotUsername` WHERE id = ?";
+                $result = TRUE; $i = 1; $matchedID = NULL;
+                $isTable = find($conn, $gotUsername, "table");
 
-                $sqlQuery = "SELECT filePath FROM users WHERE username = '{$gotUsername}'";
+                while ($result !== NULL && $isTable) {
+                    $result = query($conn, $sqlQuery, $i);
 
-                if (mysqli_fetch_row(mysqli_query($conn, $sqlQuery))[0] !== NULL) {
-                    $result = mysqli_fetch_row(mysqli_query($conn, $sqlQuery));
-                    $file_arr = explode(",", $result[0]);
-                    $filePath;
-
-                    for ($i = 0; $i < count($file_arr); $i++) {
-                        if (strpos($file_arr[$i], $noteName)) {
-                            $filePath = $file_arr[$i];
-                            break;
-                        } else {
-                            $filePath = NULL;
-                        }
+                    if (basename($result['note'] === $noteName)) {
+                        $matchedID = $i;
+                        break;
+                    } 
+                    elseif ($result === NULL) {
+                        break;
                     }
-
-                    if ($filePath != NULL) {
-                        unlink($filePath);
-                        unset($file_arr[$i]);
-                        $filePath = join(",", $file_arr);
-                        $sqlQuery = "UPDATE users SET filePath = '$filePath' WHERE username = '$gotUsername'";
-                        $result = mysqli_query($conn, $sqlQuery);
-
-                        if ($result) {
-                            echo '<p style="color: black;" class = "upload">Image Deleted</p>';
-                        } else {
-                            echo '<p style="color: black;" class = "error">Unable to Delete Image</p>';
-                        }
-                    } else {
-                    echo '<p style="color: black;" class = "error">No file found</p>';
-                    }
-                } else {
-                    echo '<p style="color: black;" class = "upload">User has no image</p>';
                 }
-            } elseif (isset($_POST['listAllBtn'])) {
-                $sqlQuery = "SELECT username FROM users";
-                $result = mysqli_query($conn, $sqlQuery);
-                $allNames = mysqli_fetch_all($result);
-                if ($result) {
+
+                if ($matchedID !== NULL && $isTable) {
+                    $sqlQuery = "DELETE FROM `$gotUsername` WHERE id = ?";
+                    $result = delete_or_update($conn, $sqlQuery, $matchedID);
+
+                    if ($result) {
+                        echo '<p style="color: black;" class = "upload">Image Deleted</p>';
+                    }
+                    else {
+                        echo '<p style="color: black;" class = "error">Unable to Delete Image</p>';
+                    }
+                } 
+                else {
+                    echo '<p style="color: black;" class = "error para">No file found</p>';
+                }
+            } 
+            elseif (isset($_POST['listAllBtn'])) {
+                $i = 1; $result = TRUE; $users = 0;
+                $sqlQuery = "SELECT * FROM users WHERE id = ?";
                 echo '<div method="post" action="modify.php" class="form_css">';
                 echo    '<h2 style="color: black;">Users</h2>';
-                for ($value = 0; $value < count($allNames); $value++) {
-                    $para = $allNames[$value][0];
-                    echo "<p style='color: #FF6100; font-size: 18px;'>" . $value + 1 . ". " . $para . "</p>";
+
+                while ($result !== NULL) {
+                    $result = query($conn, $sqlQuery, $i);
+
+                    if ($result !== NULL) {
+                        $users++;
+                        echo "<p class='para' style='color: black; font-size: 18px;'>" . $i . ". " . $result["username"] . "</p>";
+                        $i++;
+                    }
+                    else {
+                        break;
+                    }
                 }
-                echo    '<button type="submit" name="clear" style="width: 120px;" class="btn">Clear</button>';
+
+                if ($users === 0) {
+                    echo '<p style="color: black;" class = "error para">No users found</p>';
+                }
+
+                echo '<button type="submit" name="clear" style="width: 120px;" class="btn para">Clear</button>';
                 echo '</div>';
-                } else {
-                    echo '<p style="color: black;" class = "error">Unable to List Users</p>';
-                }
             }
     ?>  
             <div class="form_css">

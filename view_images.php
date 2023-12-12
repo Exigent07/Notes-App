@@ -1,18 +1,24 @@
 <?php 
-    session_start();
-    include("encryption.php");
-    $username = decrypt($_SESSION['uid']);
+require_once('Helpers/connect.php');
+require_once('Helpers/encryption.php');
+require_once('Helpers/functions.php');
 
-    if (!isset($username) || $username == "") {
-        header("Location: login.php?unauth");   
-    }
-    if (isset($_POST['logout'])) {
-        session_destroy();
-        header("Location: login.php?loggedout");
-    }  elseif (isset($_POST['goBack'])) {
-        header("Location: bios.php");
-    }
-    include("header.php");
+session_start();
+$username = decrypt($_SESSION['uid']);
+
+if (!isset($username) || $username == "") {
+    header("Location: login.php?unauth"); 
+    die();   
+}
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: login.php?loggedout");
+    die(); 
+}  elseif (isset($_POST['goBack'])) {
+    header("Location: bios.php");
+    die(); 
+}
+include("Helpers/header.php");
 ?>
 <body>
     <?php include("nav.php"); ?>    
@@ -22,27 +28,34 @@
         <?php 
              if (isset($_GET['view'])) {
                 $path = "uploads/";
+                $getNotes = TRUE; $found = 0; $value = 1;
 
-                require_once('connect.php');
-                 
-                # echo $fileType;
-                $querry = mysqli_query($conn, "SELECT filePath FROM users WHERE username = '{$username}'");
-                $getImage = mysqli_fetch_row($querry);
+                while ($getNotes !== NULL) {
+                    $query = "SELECT note FROM `$username` WHERE id = ?";
+                    $getNotes = query($conn, $query, $value);
 
-                $result = $getImage[0];
-
-                if ($result != NULL) {
-                    if (strpos($result, ",")) {
-                        $path_arr = explode (",", $result);
-                        for ($txt = 0; $txt < count($path_arr); $txt++){
-                            $filelabel = basename($path_arr[$txt]);
-                            echo '<form action="viewNotes.php" method="post" class="form_css"><h3>' . $filelabel . '</h3><p class="showNote"><input name="pathValue" type="hidden" value=' . "'" . $path_arr[$txt] . "'" . '>' . filter_var(nl2br(file_get_contents($path_arr[$txt])), FILTER_SANITIZE_STRING) . '</p><button vlaue="viewIt" type="submit" class="btn">View Note</button></form>';
+                    if ($getNotes !== NULL) {
+                        $result = $getNotes['note'];
+                        $content = file_get_contents($result);
+                        $lines = explode("\n", $content);
+                        if (count($lines) > 12) {
+                            $content = implode("\n", array_slice($lines, 0, 12)) . "\n" . "..........";
                         }
+                        $sanitized = nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8'));
+
+                        $found++; $value++;
+                        echo '<form action="viewNotes.php" method="post" class="form_css">
+                        <h3>' . basename($result) . '</h3>
+                        <p class="showNote">
+                            <input name="pathValue" type="hidden" value=' . "'" . $result . "'" . '>' . $sanitized . 
+                        '</p>
+                        <button vlaue="viewIt" type="submit" class="btn">View Note</button></form>';
                     } else {
-                        $filelabel = basename($result);
-                        echo '<form action="viewNotes.php" method="post" class="form_css" class="viewAll"><h3>' . $filelabel . '</h3><p class="showNote"><input type="hidden" name="pathValue"  value=' . "'" . $result . "'" . '>' . filter_var(nl2br(file_get_contents($result)), FILTER_SANITIZE_STRING) . '</p><button vlaue="viewIt" class="btn">View Note</button></form>';
+                        break;
                     }
-                } else  {
+                }
+
+                if ($found === 0) {
                     echo '<p style="color: black;" class = "error">Nothing to Show!</p>';
                 }
             }

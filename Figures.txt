@@ -1,0 +1,3 @@
+# Found that the php file continued to execute even after redirection that is why curl worked and fixed it by adding a die().
+# Found that RCE vuln is because of file upload and fixed it using adding a check.
+# Found sqli in admin page.

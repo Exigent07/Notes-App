@@ -1,71 +1,87 @@
 <?php 
-// Checking if the request is a post request and does there is a value for the request body.
-    if (isset($_SESSION['uid'])) {
-        header("Location: bios.php");   
-        die();
-    } elseif (isset($_SESSION['admin'])) {
-        header("Location: admin.php");   
-        die();
-    }
-    if (isset($_POST["register"])) {
-        require_once('connect.php');
-        $file = basename($_FILES["file"]["name"]);
-        $image = $_FILES['file']['tmp_name'];
-        $user = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
-        $regex = "/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/"; 
-        $ext = array("png", "jpeg", "jpg");
-        $fileSize = $_FILES['file']['size'];
+require_once('Helpers/connect.php');
+require_once('Helpers/encryption.php');
+require_once('Helpers/functions.php');
 
-        if (!preg_match($regex, $_POST['password'])) {
-            header("Location: register.php?notValid=");
-            die();
-        } elseif (preg_match("/\s/", $user)) {
-            header("Location: register.php?space");
-            die();
-        } elseif (!in_array(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION), $ext) && !isset($file) ) {
-            header("Location: register.php?notAllowed");
-            die();
-        } elseif ($fileSize > 500000) { 
-            header("Location: register.php?large");
-            die();
-        } else{
-            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        }   
+if (isset($_SESSION['uid'])) {
+    header("Location: bios.php");   
+    die();
+} 
+elseif (isset($_SESSION['admin'])) {
+    header("Location: admin.php");   
+    die();
+}
 
-        // Adds slash infront of predefined chars.
-        $content = addslashes($file);
-        mkdir("profile/" . $user);
-        $imagePath = "profile/" . $_POST['username'] . "/" . $file;
-        move_uploaded_file($image, $imagePath);
-        $sql = "SELECT username FROM users WHERE username = '{$user}'";
-        // Checking does the query was successfull
-        if (mysqli_query($conn, $sql)) {
-            $result = mysqli_query($conn, $sql);
-            $row = mysqli_fetch_row($result);
-            if (!isset($row)) {
-                $create_user = $conn->prepare("INSERT INTO users(username, password, profilePath) VALUES(?, ?, ?)");
-                $create_user->bind_param("sss", $username,  $password_hashed, $Path);
-                // Setting Parameters
-                $username = $user;
-                $password_hashed = $password;
-                $Path = $imagePath;
-                // Executing it
-                $create_user->execute();
-                $create_user->close();
-                $conn->close();
-                // Redirecting to Login page
+
+if (isset($_POST["register"])) {
+    $file       = basename($_FILES["file"]["name"]);
+    $image      = $_FILES['file']['tmp_name'];
+    $user       = htmlspecialchars($_POST['username'], ENT_QUOTES, 'UTF-8');
+    $regex      = "/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/"; 
+    $char       = "/[!@#$%^&*()_+={}\[\]:;<>,.?\/~`'\"-]/";
+    $ext        = array("png", "jpeg", "jpg");
+    $fileSize   = $_FILES['file']['size'];
+
+    unset($_COOKIE['error']);
+
+    if (!preg_match($regex, $_POST['password'])) {
+        setcookie("error", encrypt("Password Not Strong!"));
+        header("Location: register.php?error");
+        die();
+    } 
+    elseif (preg_match("/\s/", $user) || preg_match($char, $user)) {
+        setcookie("error", encrypt("Username cannot have spaces and characters"));
+        header("Location: register.php?error");
+        die();
+    } 
+    elseif (!in_array(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION), $ext) && !isset($file) ) {
+        setcookie("error", encrypt("Not a valid Image file"));
+        header("Location: register.php?error");
+        die();
+    } 
+    elseif ($fileSize > 500000) { 
+        setcookie("error", encrypt("File size exceeded (500kB)"));
+        header("Location: register.php?error");
+        die();
+    } 
+    else{
+        $password = encrypt($_POST['password']);
+    }   
+
+    $sql = "SELECT username FROM users WHERE username = ?";
+    $row = query($conn, $sql, $user);
+
+    if (!$row) {
+        if (!isset($row[$user])) {
+            $values             = array($user, $password);
+            $isInsertedUser     = insert($conn, "users", $values);
+            $Path               = $file ? "profile/" . $_POST['username'] . "/" . $file : NULL;
+            $values[1]          = $Path;
+            $isInsertedProfile  = insert($conn, "profiles", $values);
+
+            if ($isInsertedUser && $isInsertedProfile) {
+                mkdir("profile/" . $user);
+                move_uploaded_file($image, $Path);   
                 header("Location: login.php?registered");
-            } else {
-                rmdir("profile/" . $_POST['username']);
-                header("Location: register.php?exists");
+            }
+            else {
+                setcookie("error", "Registration Failed");
+                header("Location: register.php?error");
                 die();
             }
-        } else {
-            echo '<p style="color: orange;">Error: Error Occurred</p>';
-            die();
-        }
+        } 
+    }             
+    elseif ($row) {
+        setcookie("error", encrypt("Username already exists"));
+        header("Location: register.php?error");
+        die();
+    } 
+    else {
+        echo '<p style="color: orange;">Error: Error Occurred</p>';
+        die();
     }
-    include("header.php") 
+}
+require_once('Helpers/header.php');
 ?>
 <body>
     <?php include("nav.php"); ?>
@@ -74,22 +90,15 @@
         <form action="register.php" method="post" class="form_css" enctype="multipart/form-data">
         <?php
             
-            if (isset($_GET['exists'])) {
-                echo '<p style="color: black;" class = "error para">Username already exists</p>';
+            if (isset($_GET['error'])) {
+                $error = isset($_COOKIE['error']) ? decrypt($_COOKIE['error']) : "Register Here";
+                echo '<p style="width: 400px" class = "error para">' . $error . '</p>';
             } elseif (isset($_POST['reg'])) {
                 if ($_POST['reg'] === "register") {
                 echo '<p style="color: black;" class = "upload para">Register Here!</p>';
                 } else {
                     echo '<p style="color: black;" class = "error para">Not authorized!</p>';
                 }
-            } elseif (isset($_GET['notValid'])) {
-                echo '<p style="color: black;" class = "error para">Password Not Strong!</p>';
-            } elseif (isset($_GET['notAllowed'])) {
-                echo '<p style="color: black;" class = "error para">Not a valid Image file</p>';
-            } elseif (isset($_GET['large'])) {
-                echo '<p style="color: black;" class = "error para">File size exceeded (500kB)</p>';   
-            } elseif (isset($_GET['space'])) {
-                echo '<p style="color: black;" class = "error para">Username cannot have space</p>';   
             }
         ?>
             <div class="nameDiv">

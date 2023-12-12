@@ -1,104 +1,112 @@
 <?php 
-    session_start();
-    include("encryption.php");
-    $username = decrypt($_SESSION['uid']);
-    if (!isset($username) || $username == "") {
-        header("Location: login.php?unauth");   
-    } 
-    elseif (isset($_POST['logout'])) {
-        session_destroy();
-        header("Location: login.php?loggedout");
-    } elseif (isset($_POST['viewImage'])) {
-        header("Location: view_images.php?view");
-    }
-    $times = decrypt($_COOKIE[$username]);
-    include("header.php");
-    require_once('connect.php');
+require_once('Helpers/connect.php');
+require_once('Helpers/encryption.php');
+require_once('Helpers/functions.php');
+    
+session_start();
+$username = $_SESSION['uid'] ? decrypt($_SESSION['uid']) : NULL;
+if (!isset($username) || $username === "") {
+    header("Location: login.php?unauth");
+    die(); 
+} 
+elseif (isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: login.php?loggedout");
+    die();
+} 
+elseif (isset($_POST['viewImage'])) {
+    header("Location: view_images.php?view");
+    die();
+}
+$times = decrypt($_COOKIE[$username]);
+require_once('Helpers/header.php');
 ?>
+
 <body>
-    <?php include("nav.php"); ?>
+<?php include("nav.php"); ?>
     <div class="main">
         <p class="head" style="color: black;">Welcome to Note Saver!</p>
         <form action="bios.php" method="post" class="form_css" enctype="multipart/form-data">
-        <?php 
-            echo '<p style="color: black;" class = "upload para">' . $username . '</p>';
-            if (decrypt($_COOKIE[$username]) == "1") {
-                echo '<p style="color: black;" class = "para"> This is your first login today.</p>';
-            } else {
-                echo '<p style="color: black;" class = "para">You logged in ' . $times . ' times today.</p>';
-            }
-            $profilePath = mysqli_fetch_row(mysqli_query($conn, "SELECT profilePath FROM users WHERE username = '{$username}'"));
-            $defaultPath = "profile/default.png";
-            if ($profilePath[0] != NULL) {
-                echo "<img src= '$profilePath[0]' class='profile'></img>";
-            } else {
-                echo "<img src= '$defaultPath' class='profile'></img>";
-            }
-            if (isset($_POST['submitFile'])) {
-                $path = "uploads/";
-                $check = "/:\/\//";
-                $fileName = filter_var(basename($_FILES["file"]["name"]), FILTER_SANITIZE_STRING);
-                $fileRename = filter_var($_POST['fileName'], FILTER_SANITIZE_STRING);
-                $match = preg_match($check, $fileRename);
+<?php 
+    echo '<p style="color: black;" class = "upload para">' . $username . '</p>';
+    if (decrypt($_COOKIE[$username]) == "1") {
+        echo '<p style="color: black;" class = "para"> This is your first login today.</p>';
+    } else {
+        echo '<p style="color: black;" class = "para">You logged in ' . $times . ' times today.</p>';
+    }
 
-                if ($match) {
-                    echo '<p style="color: black;" class = "error para">Upload failed</p>';
-                } else {
-                    $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
-                    $uploadPath = $path . $username . "/" . $fileName;
-                    $addTo = $username; 
-                    $renamePathFile = $path . $username . "/" . $fileRename;
-                    $pathFile = $path . $username . "/" . $fileName;
-    
-                    # echo $fileType;
-                    if ($fileType == 'txt') {
-                        $image = $_FILES['file']['tmp_name'];
-                        $content = addslashes(file_get_contents($image));
-                        $checkFile = mysqli_fetch_row(mysqli_query($conn, "SELECT filePath FROM users WHERE username = '{$addTo}'"));
-                        if (!$checkFile[0] == NULL) {
-                            if (!is_dir($path . $username)) {
-                                mkdir($path . $username);
-                                $pathFile = $renamePathFile;
-                            } else {
-                                if ($checkFile[0]) {
-                                    $pathFile = $checkFile[0] . "," . $path . $username . "/" . $fileRename;
-                                }
-                            }                        
-                            $sql = "UPDATE users SET filePath = '$pathFile' WHERE username = '{$addTo}'";
-                            $insert = mysqli_query($conn, $sql);
-                            if ($insert) {
-                                move_uploaded_file($image, $uploadPath);
-                                rename($uploadPath, $renamePathFile);
-                                echo '<p style="color: black;" class = "upload para">Note uploaded</p>';
-                            } else {
-                                echo '<p style="color: black;" class = "error para">Upload failed</p>';
-                            }
-                        } else {
-                            if (!is_dir($path . $username)) {
-                                mkdir($path . $username);
-                                $pathFile = $renamePathFile;
-                            }
-                            $sql = "UPDATE users SET filePath = '$renamePathFile' WHERE username = '{$addTo}'";
-                            $insert = mysqli_query($conn, $sql);
-                            if ($insert) {
-                                move_uploaded_file($image, $pathFile);
-                                rename($pathFile, $renamePathFile);
-                                echo '<p style="color: black;" class = "upload para">Note uploaded</p>';
-                            } else {
-                                echo '<p style="color: black;" class = "error para">Upload failed</p>';
-                            }
+    $query          = "SELECT profile FROM profiles WHERE username = ?";
+    $profilePath    = query($conn, $query, $username);
+    $defaultPath    = "profile/default.png";
+    $profile        = $profilePath['profile'];
+
+    if ($profile != NULL) {
+        echo "<img src= '$profile' class='profile'></img>";
+    } else {
+        echo "<img src= '$defaultPath' class='profile'></img>";
+    }
+    if (isset($_POST['submitFile'])) {
+        $path = "uploads/";
+        $check = "/[!@#$%^&*()+={}\[\]:;<>,?\/~`'\"-]/";
+        
+        $fileName = htmlentities($_FILES["file"]["name"], ENT_QUOTES, 'UTF-8');
+        $fileRename = htmlentities($_POST['fileName'], ENT_QUOTES, 'UTF-8');
+        $match = preg_match($check, $fileRename);
+
+        if ($match || pathinfo($fileRename, PATHINFO_EXTENSION) !== "txt") {
+            echo '<p style="color: black;" class = "error para">Upload failed</p>';
+        } else {
+            $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
+            $renamePathFile = $path . $username . "/" . $fileRename;
+
+            if ($fileType == 'txt') {
+                $image = $_FILES['file']['tmp_name'];
+                $content = file_get_contents($image);
+                $options = array("notes", $username);
+                $exists = FALSE;
+                createTable($conn, $options);
+                $sql = "SELECT * FROM `$username` WHERE id = ?";
+                $checkFile = True; $i = 1;
+                
+                while ($checkFile !== NULL) {
+                    $checkFile = query($conn, $sql, $i);
+                
+                    if ($checkFile !== NULL) {
+                        $checkName = $checkFile['note'];
+                
+                        if ($checkName === $renamePathFile) {
+                            $exists = TRUE;
+                            break;
                         }
+                        $i++;
                     } else {
-                        echo '<p style="color: black;" class = "upload">Not a txt file!</p>';
+                        break;
                     }
-                    // $querry = mysqli_query($conn, "SELECT filePath FROM users WHERE username = '{$addTo}'");
-                    // $getImage = mysqli_fetch_row($querry);
-                    
-                    // $result = $getImage[0];
-                    // echo '<p class="showNote">' . nl2br(file_get_contents($result)) . '</p>';
+                }
+
+                if ($exists === FALSE) {
+                    if (!is_dir($path . $username)) {
+                        mkdir($path . $username);
+                    }
+                    $inserted = insert($conn, $username, $renamePathFile);
+                    if ($inserted) {
+                        move_uploaded_file($image, $renamePathFile);
+                        echo '<p style="color: black;" class = "upload para">Note uploaded</p>';
+                    } 
+                    else {
+                        echo '<p style="color: black;" class = "error para">Upload failed</p>';
+                    }
+                } else {
+                    echo '<p style="color: black;" class = "upload para">Filename exists</p>';
                 }
             }
-                
+            else {
+                echo '<p style="color: black;" class = "upload para">Not a txt file!</p>';
+            }
+        }
+    } 
+
+        
 ?>
             <input type="file" name="file" required class="fileInput para">
             <input type="text" name="fileName" required class="inp para" placeholder="Filename.txt" autocomplete="off">
