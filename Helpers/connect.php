@@ -13,7 +13,7 @@ function createTable($conn, $table) {
             password VARCHAR(255) NOT NULL
             )";
     }
-    elseif ($table === "profiles") {
+    elseif ($table === "pr                  ofiles") {
         $stmt = "CREATE TABLE IF NOT EXISTS profiles(
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(255) NOT NULL,

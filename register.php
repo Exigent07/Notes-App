@@ -14,7 +14,6 @@ elseif (isset($_SESSION['admin'])) {
     die();
 }
 
-
 if (isset($_POST["register"])) {
     $file       = basename($_FILES["file"]["name"]);
     $image      = $_FILES['file']['tmp_name'];

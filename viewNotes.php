@@ -28,7 +28,7 @@
 <?php include("nav.php"); ?>    
 <form action="viewNotes.php" method="post" class="noteBody">
     <?php 
-        $path = $_POST['pathValue'];
+        $path = decrypt($_POST['pathValue']);
         $filelabel = basename($path, '.txt');
         echo "<h2 class='heading'>" . strtoupper($filelabel) . "</h2>";
         echo "<div class='viewNotes'><p>" . nl2br(htmlspecialchars(file_get_contents($path), ENT_QUOTES, 'UTF-8')) . "</p></div>";

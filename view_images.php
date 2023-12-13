@@ -55,7 +55,7 @@ include("Helpers/header.php");
                         echo '<form action="viewNotes.php" method="post" class="form_css">
                         <h3>' . basename($result) . '</h3>
                         <p class="showNote">
-                            <input name="pathValue" type="hidden" value=' . "'" . $result . "'" . '>' . $sanitized . 
+                            <input name="pathValue" type="hidden" value=' . "'" . encrypt($result) . "'" . '>' . $sanitized . 
                         '</p>
                         <button vlaue="viewIt" type="submit" class="btn">View Note</button></form>';
                     } else {
