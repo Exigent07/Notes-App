@@ -4,6 +4,7 @@ require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
 if (isset($_SESSION['uid'])) {
+    $user = decrypt($_SESSION['uid']);
     $ip = $_SERVER['REMOTE_ADDR'];
     $querry = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
     header("Location: bios.php");   
