@@ -1,19 +1,30 @@
 <?php 
-    session_start();
-    $username = $_SESSION['admin'];
-    if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
-        header("Location: login.php?unauth");  
-        die(); 
-    }
-    if (isset($_POST['logout'])) {
-        session_destroy();
-        header("Location: login.php?loggedout");
-        die();
-    }  elseif (isset($_POST['goBack'])) {
-        header("Location: admin.php");
-        die();
-    } 
-    include("header.php");
+require_once('Helpers/connect.php');
+require_once('Helpers/encryption.php');
+require_once('Helpers/functions.php');
+
+$query = "SELECT ip FROM waf WHERE username = 'admin'";
+$ip = query($conn, $query, NULL);
+
+session_start();
+$username = $_SESSION['admin'];
+if (!isset($_SESSION['admin']) || $_SESSION['admin'] !== encrypt("admin")) {
+    header("Location: login.php?unauth");  
+    die(); 
+} 
+elseif ($_SERVER['REMOTE_ADDR'] !== $ip['ip']) {
+    header("Location: login.php?unauth");   
+    die(); 
+}
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: login.php?loggedout");
+    die();
+}  elseif (isset($_POST['goBack'])) {
+    header("Location: admin.php");
+    die();
+} 
+require_once("Helpers/header.php");
 ?>
 <body>
     <div class="main">
@@ -22,46 +33,65 @@
         <?php 
                 if (isset($_GET['viewall'])) {
                 $path = "uploads/";
+                $query = TRUE; $found = 0; $i = 1;
+                $usernames = array(); $notes = array();
+                
+                echo "  <div class='viewAll'>";
+                while ($query !== NULL) {
+                    $query = query($conn, "SELECT username FROM users WHERE id = ?", $i);
+                    if ($query) {
+                        $name = $query['username'];
+                        if ($name === "admin") {
+                            $i++;
+                            continue;
+                        }
+                        echo "<h3 class='para' style='text-decoration: underline;'>" . $name . "</h3>";
+                        $j = 1;
+                        $notes = array();
+                        $note = TRUE; 
+                        while ($note !== NULL) {
+                            $find = find($conn, $name, "table");
 
-                require_once('connect.php');
-
-                $querry = mysqli_query($conn, "SELECT username, filePath FROM users");
-                $getImage = mysqli_fetch_all($querry);
-
-                for ($user = 0; $user < count($getImage); $user++) {
-                    $name = $getImage[$user][0];
-                    if ($getImage[$user][1] !== NULL) {
-                        $file = $getImage[$user][1];
-                        $filelabel = basename($file);
-                        if (strpos($file, ",")) {
-                            $path_arr = explode(",", $file);
-                            echo "<div class='viewAll'>
-                            <h3 style='text-decoration: underline;'>" . $name . "</h3>";
-                            for ($txt = 0; $txt < count($path_arr); $txt++){
-                                $filelabel = basename($path_arr[$txt]);
-                                $fileContent = nl2br(file_get_contents($path_arr[$txt]));
-
-                                echo "
-                                <p>#" . $filelabel . "</p>
-                                <p class='showNote'>" . filter_var($fileContent, FILTER_SANITIZE_STRING) . "</p>";
-                            }
-                            echo "</div>";
-                        } else {
-                            if ($getImage[0][1] != NULL) {
-                                $filelabel = basename($getImage[0][1]);
-                                $fileContent = nl2br(file_get_contents($getImage[0][1]));
-
-                                echo '<h3>' . $filelabel . '</h3><p class="showNote">' . filter_var($fileContent, FILTER_SANITIZE_STRING). '</p>';
+                            if (!$find) {
+                                break;
                             } else {
-                                echo '<p style="color: black;" class = "error">Nothing to Show!</p>';
+                            $note = query($conn, "SELECT note FROM `$name` WHERE id = ?", $j);
+                                if ($note) {
+                                    $notes[] = $result = $note['note'];
+                                    $content = file_get_contents($result);
+                                    $lines = explode("\n", $content);
+                                    $filelabel = sanitize(basename($result));
+                                    if (count($lines) > 12) {
+                                        $content = implode("\n", array_slice($lines, 0, 12)) . "\n" . "..........";
+                                    }
+                                    $sanitized = nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8'));
+                                    echo "
+                                    <p>#" . $filelabel . "</p>
+                                    <p class='showNote'>" . $sanitized . "</p>";
+                                    $found++;
+                                    $j++;
+                                } else {
+                                    break;
+                                }
                             }
                         }
-                    } else {
-                        $file = NULL;
+                        $usernames[$name] = $notes;
+                        if (count($usernames[$name]) === 0) {
+                            echo '<p style="color: black;" class = "error para">Nothing to Show!</p>';
+                        }
+                        $i++;
+                    } 
+                    else {
+                        break;
                     }
+                }
+                echo "</div>";
 
+                if ($found === 0) {
+                    echo '<p style="color: black;" class = "error para">Nothing to Show!</p>';
                 }
             }
+        $conn->close();
     ?>
             <button type="submit" name="goBack" value="goBack" class="btn" style="width: 120px;">Go back</button>
         </form>

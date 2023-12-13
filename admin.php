@@ -1,25 +1,34 @@
 <?php 
-    session_start();
+require_once('Helpers/encryption.php');
+require_once('Helpers/connect.php');
+session_start();
 
-    if (!isset($_SESSION['admin']) || !$_SESSION['admin'] == md5("admin")) {
-        header("Location: login.php?unauth");   
-        die(); 
-    }
-    if (isset($_POST['logout'])) {
-        session_destroy();
-        header("Location: login.php?loggedout");
-        die(); 
-    } elseif (isset($_POST['viewAll'])) {
-        header("Location: viewAll.php?viewall");
-        die(); 
-    } elseif (isset($_POST['modifyUsers'])) {
-        header("Location: modify.php?modify");
-        die();
-    } elseif (isset($_POST['viewProfile'])) {
-        header("Location: allProfile.php?viewProfile");
-        die();
-    }
-    include("Helpers/header.php");
+$query = "SELECT ip FROM waf WHERE username = 'admin'";
+$ip = query($conn, $query, NULL);
+
+if (!isset($_SESSION['admin']) || $_SESSION['admin'] !== encrypt("admin")) {
+    header("Location: login.php?unauth");   
+    die(); 
+} 
+elseif ($_SERVER['REMOTE_ADDR'] !== $ip['ip']) {
+    header("Location: login.php?unauth");   
+    die(); 
+}
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: login.php?loggedout");
+    die(); 
+} elseif (isset($_POST['viewAll'])) {
+    header("Location: viewAll.php?viewall");
+    die(); 
+} elseif (isset($_POST['modifyUsers'])) {
+    header("Location: modify.php?modify");
+    die();
+} elseif (isset($_POST['viewProfile'])) {
+    header("Location: allProfile.php?viewProfile");
+    die();
+}
+include("Helpers/header.php");
 ?>
 <body>
     <div class="main">

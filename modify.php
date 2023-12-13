@@ -3,10 +3,17 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
+$query = "SELECT ip FROM waf WHERE username = 'admin'";
+$ip = query($conn, $query, NULL);
+
 session_start();
 $username = $_SESSION['admin'];
 $path = "uploads/";
-if (!isset($_SESSION['admin']) || !decrypt($_SESSION['admin']) == "admin") {
+if (!isset($_SESSION['admin']) || decrypt($_SESSION['admin']) !== "admin") {
+    header("Location: login.php?unauth");   
+    die(); 
+}
+elseif ($_SERVER['REMOTE_ADDR'] !== $ip['ip']) {
     header("Location: login.php?unauth");   
     die(); 
 }
@@ -26,13 +33,13 @@ require_once("Helpers/header.php");
         <form action="modify.php" method="post" class="form_css">
         <?php 
             if (isset($_POST['deleteUserBtn'])) {
-                $gotUsername = $_POST['usernameDelete'];
+                $gotUsername = sanitize($_POST['usernameDelete']);
                 if ($gotUsername === "admin") {
                     echo '<p style="color: black;" class = "error">Unable to Delete User</p>';
                 } 
                 else {
-                    $sqlQuery = "DELETE FROM users WHERE username = ?";
-                    $result = delete_or_update($conn, $sqlQuery, $gotUsername);
+                    $sqlQuery = "DELETE FROM users WHERE username = '$gotUsername'";
+                    $result = delete_or_update($conn, $sqlQuery);
                     
                     if ($result) {
                         echo '<p style="color: black;" class = "upload">User Deleted</p>';
@@ -44,21 +51,21 @@ require_once("Helpers/header.php");
 
             } 
             elseif (isset($_POST['deleteChangeBtn'])) {
-                $gotUsername = $_POST['usernameChange'];
-                $changeName = $_POST['changeName'];
+                $gotUsername = sanitize($_POST['usernameChange']);
+                $changeName = sanitize($_POST['changeName']);
 
-                $sqlQuery = "UPDATE users SET username = ? WHERE username = ?";
-                $result = delete_or_update($conn, $sqlQuery, array($changeName, $gotUsername));
+                $sqlQuery = "UPDATE users SET username = '$changeName' WHERE username = '$gotUsername'";
+                $result = delete_or_update($conn, $sqlQuery);
 
                 if ($result) {
                     echo '<p style="color: black;" class = "upload">Username Changed</p>';
                 } 
                 else {
-                    echo '<p style="color: black;" class = "error">Unable to Delete User</p>';
+                    echo '<p style="color: black;" class = "error">Unable to Change Username</p>';
                 }
             } elseif (isset($_POST['deleteimageBtn'])) {
-                $gotUsername = $_POST['imageDelete'];
-                $noteName = $_POST['noteName'];
+                $gotUsername = sanitize($_POST['imageDelete']);
+                $noteName = sanitize($_POST['noteName']);
                 $sqlQuery = "SELECT * FROM `$gotUsername` WHERE id = ?";
                 $result = TRUE; $i = 1; $matchedID = NULL;
                 $isTable = find($conn, $gotUsername, "table");
@@ -66,7 +73,7 @@ require_once("Helpers/header.php");
                 while ($result !== NULL && $isTable) {
                     $result = query($conn, $sqlQuery, $i);
 
-                    if (basename($result['note'] === $noteName)) {
+                      if (basename($result['note'] === $noteName)) {
                         $matchedID = $i;
                         break;
                     } 
@@ -76,14 +83,14 @@ require_once("Helpers/header.php");
                 }
 
                 if ($matchedID !== NULL && $isTable) {
-                    $sqlQuery = "DELETE FROM `$gotUsername` WHERE id = ?";
-                    $result = delete_or_update($conn, $sqlQuery, $matchedID);
+                    $sqlQuery = "DELETE FROM `$gotUsername` WHERE id = '$matchedID'";
+                    $result = delete_or_update($conn, $sqlQuery);
 
                     if ($result) {
                         echo '<p style="color: black;" class = "upload">Image Deleted</p>';
                     }
                     else {
-                        echo '<p style="color: black;" class = "error">Unable to Delete Image</p>';
+                        echo '<p style="color: black;" class = "error">Unable to Delete Note</p>';
                     }
                 } 
                 else {
@@ -98,7 +105,7 @@ require_once("Helpers/header.php");
 
                 while ($result !== NULL) {
                     $result = query($conn, $sqlQuery, $i);
-
+                    
                     if ($result !== NULL) {
                         $users++;
                         echo "<p class='para' style='color: black; font-size: 18px;'>" . $i . ". " . $result["username"] . "</p>";
@@ -116,6 +123,7 @@ require_once("Helpers/header.php");
                 echo '<button type="submit" name="clear" style="width: 120px;" class="btn para">Clear</button>';
                 echo '</div>';
             }
+        $conn->close();
     ?>  
             <div class="form_css">
                 <p style="color: black; font-size: 25px" class="head">Delete User</p>

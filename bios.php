@@ -4,12 +4,17 @@ require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
     
 session_start();
-$username = $_SESSION['uid'] ? decrypt($_SESSION['uid']) : NULL;
-if (!isset($username) || $username === "") {
+$username = $_SESSION['uid'] ? (decrypt($_SESSION['uid'])) : NULL;
+$query = "SELECT ip FROM waf WHERE username = ?";
+$ip = query($conn, $query, $username);
+
+if (!isset($username) || $username === "" || $ip['ip'] !== $_SERVER['REMOTE_ADDR']) {
+    session_destroy();
     header("Location: login.php?unauth");
-    die(); 
+    die();
 } 
 elseif (isset($_POST['logout'])) {
+    logout($conn, $username);
     session_destroy();
     header("Location: login.php?loggedout");
     die();
@@ -36,7 +41,7 @@ require_once('Helpers/header.php');
     }
 
     $query          = "SELECT profile FROM profiles WHERE username = ?";
-    $profilePath    = query($conn, $query, $username);
+    $profilePath    = query($conn, $query, sanitize($username));
     $defaultPath    = "profile/default.png";
     $profile        = $profilePath['profile'];
 
@@ -88,7 +93,7 @@ require_once('Helpers/header.php');
                     if (!is_dir($path . $username)) {
                         mkdir($path . $username);
                     }
-                    $inserted = insert($conn, $username, $renamePathFile);
+                    $inserted = insert($conn, sanitize($username), $renamePathFile);
                     if ($inserted) {
                         move_uploaded_file($image, $renamePathFile);
                         echo '<p style="color: black;" class = "upload para">Note uploaded</p>';
@@ -105,10 +110,9 @@ require_once('Helpers/header.php');
             }
         }
     } 
-
-        
+    $conn->close();     
 ?>
-            <input type="file" name="file" required class="fileInput para">
+            <input type="file" name="file" accept=".txt" required class="fileInput para">
             <input type="text" name="fileName" required class="inp para" placeholder="Filename.txt" autocomplete="off">
             <button type="submit" name="submitFile" value="upload" class="btn para" style="width: 120px;">Upload</button>
         </form>

@@ -4,16 +4,21 @@ require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
 session_start();
-$username = decrypt($_SESSION['uid']);
 
-if (!isset($username) || $username == "") {
-    header("Location: login.php?unauth"); 
-    die();   
-}
+$username = $_SESSION['uid'] ? (decrypt($_SESSION['uid'])) : NULL;
+$query = "SELECT ip FROM waf WHERE username = ?";
+$ip = query($conn, $query, $username);
+
+if (!isset($username) || $username === "" || $ip['ip'] !== $_SERVER['REMOTE_ADDR']) {
+    session_destroy();
+    header("Location: login.php?unauth");
+    die();
+} 
 if (isset($_POST['logout'])) {
+    logout($conn, $username);
     session_destroy();
     header("Location: login.php?loggedout");
-    die(); 
+    die();
 }  elseif (isset($_POST['goBack'])) {
     header("Location: bios.php");
     die(); 
@@ -31,6 +36,9 @@ include("Helpers/header.php");
                 $getNotes = TRUE; $found = 0; $value = 1;
 
                 while ($getNotes !== NULL) {
+                    if (!find($conn, $username, "table")) {
+                        break;
+                    }
                     $query = "SELECT note FROM `$username` WHERE id = ?";
                     $getNotes = query($conn, $query, $value);
 
@@ -59,6 +67,7 @@ include("Helpers/header.php");
                     echo '<p style="color: black;" class = "error">Nothing to Show!</p>';
                 }
             }
+        $conn->close();
         ?>
         </form>
         <form action="view_images.php" method="post" class="form_css">

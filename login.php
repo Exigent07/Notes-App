@@ -3,7 +3,6 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
-
 session_start();
 if (isset($_SESSION['uid'])) {
     header("Location: bios.php");  
@@ -14,11 +13,10 @@ elseif (isset($_SESSION['admin']) && $_SESSION['admin'] == decrypt('admin')) {
     die();
 } 
 elseif (isset($_POST["login"])) {
-    $user   = htmlspecialchars($_POST['username'], ENT_QUOTES, 'UTF-8');
+    $user   = sanitize($_POST['username']);
     $pass   = $_POST['password'];
     $sql    = "SELECT password FROM users WHERE username = ?";
     $row    = query($conn, $sql, $user);
-    
     if ($row) {
         $verified = verify($row['password'], $pass);
         
@@ -30,6 +28,9 @@ elseif (isset($_POST["login"])) {
                 $_SESSION['uid'] = encrypt($user);
                 increase_cookie($user);
                 echo "Success";
+                $ip = $_SERVER['REMOTE_ADDR'];
+                $querry = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
+                insert($conn, "waf", array($user, $ip));
                 header("Location: bios.php");
                 die();
             }
@@ -50,23 +51,24 @@ require_once('Helpers/header.php');
         <p style="color: black;" class="head">Note Saver Login</p>
         <p style="color: black;" class="para">Save Your Notes Here!</p>
         <form action="login.php" method="post" class="form_css">
-            <?php 
-                if (isset($_GET['loggedout'])) {
-                    echo '<p style="color: black;" class = "upload para">Logged out successfully</p>';
-                } elseif (isset($_POST['log'])) {
-                    if ($_POST['log'] === "login") {
-                    echo '<p style="color: black;" class = "upload para">Login Here!</p>';
-                    } else {
-                        echo '<p style="color: black;" class = "error">Not authorized!</p>';
-                    }
-                } elseif (isset($_GET['registered'])) {
-                    echo '<p style="color: black;" class = "upload para">Registration successfully</p>';
-                } elseif (isset($_GET['unauth'])) {
-                    echo '<p style="color: black;" class = "error para">Unauthorized</p>';
-                } elseif (isset($_GET['invalid'])) {
-                        echo '<p style="color: black;" class = "error para">Invalid username or password</p>';
-                }
-            ?>
+<?php 
+if (isset($_GET['loggedout'])) {
+    echo '<p style="color: black;" class = "upload para">Logged out successfully</p>';
+} elseif (isset($_POST['log'])) {
+    if ($_POST['log'] === "login") {
+    echo '<p style="color: black;" class = "upload para">Login Here!</p>';
+    } else {
+        echo '<p style="color: black;" class = "error">Not authorized!</p>';
+    }
+} elseif (isset($_GET['registered'])) {
+    echo '<p style="color: black;" class = "upload para">Registration successfully</p>';
+} elseif (isset($_GET['unauth'])) {
+    echo '<p style="color: black;" class = "error para">Unauthorized</p>';
+} elseif (isset($_GET['invalid'])) {
+        echo '<p style="color: black;" class = "error para">Invalid username or password</p>';
+}
+$conn->close();
+?>
             <div class="nameDiv">
                 <input placeholder="Username" class="inp para" id="username" name="username" type="text" autocomplete="off" required>
             </div>

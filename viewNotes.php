@@ -1,21 +1,28 @@
 <?php
     session_start();
-    include("Helpers/encryption.php");
-    $username = decrypt($_SESSION['uid']);
-    if (!isset($username) || $username == "") {
-        header("Location: login.php?unauth");   
-        die(); 
-    }
+    require_once("Helpers/encryption.php");
+    require_once("Helpers/connect.php");
+
+    $username = $_SESSION['uid'] ? (decrypt($_SESSION['uid'])) : NULL;
+    $query = "SELECT ip FROM waf WHERE username = ?";
+    $ip = query($conn, $query, $username);
+    
+    if (!isset($username) || $username === "" || $ip['ip'] !== $_SERVER['REMOTE_ADDR']) {
+        session_destroy();
+        header("Location: login.php?unauth");
+        die();
+    } 
 
     if (isset($_POST['logout'])) {
+        logout($conn, $username);
         session_destroy();
         header("Location: login.php?loggedout");
-        die(); 
+        die();
     }  elseif (isset($_POST['goBack'])) {
         header("Location: view_images.php?view");
         die(); 
     }
-    include("Helpers/header.php");
+    require_once("Helpers/header.php");
 ?>
 <body>
 <?php include("nav.php"); ?>    

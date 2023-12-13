@@ -4,6 +4,8 @@ require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
 if (isset($_SESSION['uid'])) {
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $querry = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
     header("Location: bios.php");   
     die();
 } 
@@ -19,8 +21,9 @@ if (isset($_POST["register"])) {
     $user       = htmlspecialchars($_POST['username'], ENT_QUOTES, 'UTF-8');
     $regex      = "/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/"; 
     $char       = "/[!@#$%^&*()_+={}\[\]:;<>,.?\/~`'\"-]/";
-    $ext        = array("png", "jpeg", "jpg");
+    $ext        = array("png");
     $fileSize   = $_FILES['file']['size'];
+    $name       = time() . ".png";
 
     unset($_COOKIE['error']);
 
@@ -34,7 +37,7 @@ if (isset($_POST["register"])) {
         header("Location: register.php?error");
         die();
     } 
-    elseif (!in_array(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION), $ext) && !isset($file) ) {
+    elseif (!isset($file) && !in_array(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION), $ext)) {
         setcookie("error", encrypt("Not a valid Image file"));
         header("Location: register.php?error");
         die();
@@ -55,7 +58,7 @@ if (isset($_POST["register"])) {
         if (!isset($row[$user])) {
             $values             = array($user, $password);
             $isInsertedUser     = insert($conn, "users", $values);
-            $Path               = $file ? "profile/" . $_POST['username'] . "/" . $file : NULL;
+            $Path               = $file ? "profile/" . $_POST['username'] . "/" . $name : NULL;
             $values[1]          = $Path;
             $isInsertedProfile  = insert($conn, "profiles", $values);
 
@@ -63,6 +66,7 @@ if (isset($_POST["register"])) {
                 mkdir("profile/" . $user);
                 move_uploaded_file($image, $Path);   
                 header("Location: login.php?registered");
+                die();
             }
             else {
                 setcookie("error", "Registration Failed");
@@ -81,6 +85,7 @@ if (isset($_POST["register"])) {
         die();
     }
 }
+$conn->close();
 require_once('Helpers/header.php');
 ?>
 <body>
@@ -108,7 +113,7 @@ require_once('Helpers/header.php');
                 <input placeholder="Password" minlength="8" class="inp para" type="password" name="password" id="password" autocomplete="off" required>
             </div>
             <img src="profile/default.png" alt="profile" class="profile">
-            <input type="file" name="file" class="fileInput para" accept="image/png, image/jpg, image/jpeg">
+            <input type="file" name="file" class="fileInput para" accept="image/png">
             <button type="submit" name="register" class="btn para" style="width: 120px;">Register</button>
         </form>
         <form action="login.php" method="post">

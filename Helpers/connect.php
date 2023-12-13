@@ -1,7 +1,7 @@
 <?php
 
-error_reporting(E_ALL);
-ini_set('display_errors', true);
+// error_reporting(E_ALL);
+// ini_set('display_errors', true);
 
 function createTable($conn, $table) {
     $stmt = NULL;
@@ -18,6 +18,12 @@ function createTable($conn, $table) {
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(255) NOT NULL,
             profile VARCHAR(255)
+            )";
+    }
+    elseif ($table === "waf") {
+        $stmt = "CREATE TABLE IF NOT EXISTS waf(
+            username VARCHAR(255) NOT NULL,
+            ip VARCHAR(255)
             )";
     }
     elseif ($table[0] === "notes") {
@@ -46,6 +52,7 @@ function connect() {
     $conn = new mysqli($servername, $DbUser, $password, $database);
     createTable($conn, "users");
     createTable($conn, "profiles");
+    createTable($conn, "waf");
 
     return $conn->connect_error ? NULL : $conn;
 }
@@ -57,11 +64,14 @@ function insert($conn, $table, $value) {
     elseif ($table === "profiles") {
         $stmt = $table && $value ? $conn->prepare("INSERT INTO `$table`(username, profile) VALUES(?, ?)") : NULL;
     }
+    elseif ($table === "waf") {
+        $stmt = $table && $value ? $conn->prepare("INSERT INTO `$table`(username, ip) VALUES(?, ?)") : NULL;
+    }
     else {
         $stmt = $table && $value ? $conn->prepare("INSERT INTO `$table`(note) VALUES(?)") : NULL;
     }
     if ($stmt !== NULL) {
-        if ($table === "users" || $table === "profiles") {
+        if ($table === "users" || $table === "profiles" || $table === "waf") {
             $stmt->bind_param("ss", $value[0], $value[1]);
         } else {
             $stmt->bind_param("s", $value);
@@ -75,6 +85,12 @@ function insert($conn, $table, $value) {
     }
 }
 
+function logout($conn, $username) {
+    $query = $conn->prepare("DELETE FROM waf WHERE username = ?");
+    $query->bind_param("s", $username);
+    $query->execute();
+}
+
 function query($conn, $query, $user) {
     if ($conn && $query) {
         $stmt = $conn->prepare($query);
@@ -85,7 +101,9 @@ function query($conn, $query, $user) {
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
         $stmt->close();
-
+        if ($conn->affected_rows === -1 && $conn->field_count === 0) {
+            return FALSE;
+        }
         return $row;
     }
     else {
@@ -102,27 +120,17 @@ function find($conn, $user, $option) {
         else {
             return FALSE;
         }
-    } elseif ($option === "user") {
-        
     }
 }
 
-function delete_or_update($conn, $query, $user) {
-    if ($conn && $query && !is_array($user)) {
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("s", $user);
-        $stmt->execute();
-        $stmt->close();
-
-        return $result;
-    }
-    elseif ($conn && $query && is_array($user)) {
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ss", $user[0], $user[1]);
-        $result = $stmt->execute();
-        $stmt->close();
-
-        return $result;
+function delete_or_update($conn, $query) {
+    if ($conn && $query) {
+        $result = $conn->query($query);
+        if ($conn->affected_rows === 0) {
+            return FALSE;
+        } else {
+            return TRUE;
+        }
     }
     else {
         return FALSE;
