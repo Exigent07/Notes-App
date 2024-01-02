@@ -3,8 +3,9 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
     
+userAgent();
 session_start();
-$username = $_SESSION['uid'] ? (decrypt($_SESSION['uid'])) : NULL;
+$username = isset($_SESSION['uid']) ? (decrypt($_SESSION['uid'])) : NULL;
 $query = "SELECT ip FROM waf WHERE username = ?";
 $ip = query($conn, $query, $username);
 

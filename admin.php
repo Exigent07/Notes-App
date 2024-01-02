@@ -1,8 +1,10 @@
 <?php 
 require_once('Helpers/encryption.php');
 require_once('Helpers/connect.php');
+require_once('Helpers/functions.php');
 session_start();
 
+userAgent();
 $query = "SELECT ip FROM waf WHERE username = 'admin'";
 $ip = query($conn, $query, NULL);
 
@@ -22,7 +24,7 @@ if (isset($_POST['logout'])) {
     header("Location: viewAll.php?viewall");
     die(); 
 } elseif (isset($_POST['modifyUsers'])) {
-    header("Location: modify.php?modify");
+    header("Location: modify.php");
     die();
 } elseif (isset($_POST['viewProfile'])) {
     header("Location: allProfile.php?viewProfile");

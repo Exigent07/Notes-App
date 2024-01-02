@@ -3,6 +3,7 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
+userAgent();
 $query = "SELECT ip FROM waf WHERE username = 'admin'";
 $ip = query($conn, $query, NULL);
 
@@ -21,9 +22,14 @@ if (isset($_POST['logout'])) {
     session_destroy();
     header("Location: login.php?loggedout");
     die(); 
-}  elseif (isset($_POST['goBack'])) {
+}  
+elseif (isset($_POST['goBack'])) {
     header("Location: admin.php");
     die(); 
+}
+elseif (count($_GET) !== 0) {
+    header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+    die();
 }
 require_once("Helpers/header.php");
 ?>

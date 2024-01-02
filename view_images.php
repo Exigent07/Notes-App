@@ -3,6 +3,7 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
+userAgent();
 session_start();
 
 $username = $_SESSION['uid'] ? (decrypt($_SESSION['uid'])) : NULL;
@@ -19,9 +20,14 @@ if (isset($_POST['logout'])) {
     session_destroy();
     header("Location: login.php?loggedout");
     die();
-}  elseif (isset($_POST['goBack'])) {
+}  
+elseif (isset($_POST['goBack'])) {
     header("Location: bios.php");
     die(); 
+} 
+elseif (!isset($_GET['view'])) {
+    header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+    die();
 }
 include("Helpers/header.php");
 ?>
@@ -31,41 +37,39 @@ include("Helpers/header.php");
         <p class="head" style="color: black;">Your Text Files</p>
         <form action="viewNotes.php" method="post" class="form_css">
         <?php 
-             if (isset($_GET['view'])) {
-                $path = "uploads/";
-                $getNotes = TRUE; $found = 0; $value = 1;
+            $path = "uploads/";
+            $getNotes = TRUE; $found = 0; $value = 1;
 
-                while ($getNotes !== NULL) {
-                    if (!find($conn, $username, "table")) {
-                        break;
-                    }
-                    $query = "SELECT note FROM `$username` WHERE id = ?";
-                    $getNotes = query($conn, $query, $value);
-
-                    if ($getNotes !== NULL) {
-                        $result = $getNotes['note'];
-                        $content = file_get_contents($result);
-                        $lines = explode("\n", $content);
-                        if (count($lines) > 12) {
-                            $content = implode("\n", array_slice($lines, 0, 12)) . "\n" . "..........";
-                        }
-                        $sanitized = nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8'));
-
-                        $found++; $value++;
-                        echo '<form action="viewNotes.php" method="post" class="form_css">
-                        <h3>' . basename($result) . '</h3>
-                        <p class="showNote">
-                            <input name="pathValue" type="hidden" value=' . "'" . encrypt($result) . "'" . '>' . $sanitized . 
-                        '</p>
-                        <button vlaue="viewIt" type="submit" class="btn">View Note</button></form>';
-                    } else {
-                        break;
-                    }
+            while ($getNotes !== NULL) {
+                if (!find($conn, $username, "table")) {
+                    break;
                 }
+                $query = "SELECT note FROM `$username` WHERE id = ?";
+                $getNotes = query($conn, $query, $value);
 
-                if ($found === 0) {
-                    echo '<p style="color: black;" class = "error">Nothing to Show!</p>';
+                if ($getNotes !== NULL) {
+                    $result = $getNotes['note'];
+                    $content = file_get_contents($result);
+                    $lines = explode("\n", $content);
+                    if (count($lines) > 12) {
+                        $content = implode("\n", array_slice($lines, 0, 12)) . "\n" . "..........";
+                    }
+                    $sanitized = nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8'));
+
+                    $found++; $value++;
+                    echo '<form action="viewNotes.php" method="post" class="form_css">
+                    <h3>' . basename($result) . '</h3>
+                    <p class="showNote">
+                        <input name="pathValue" type="hidden" value=' . "'" . encrypt($result) . "'" . '>' . $sanitized . 
+                    '</p>
+                    <button vlaue="viewIt" type="submit" class="btn">View Note</button></form>';
+                } else {
+                    break;
                 }
+            }
+
+            if ($found === 0) {
+                echo '<p style="color: black;" class = "error">Nothing to Show!</p>';
             }
         $conn->close();
         ?>

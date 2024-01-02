@@ -3,6 +3,7 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
+userAgent();
 $query = "SELECT ip FROM waf WHERE username = 'admin'";
 $ip = query($conn, $query, NULL);
 
@@ -20,10 +21,15 @@ if (isset($_POST['logout'])) {
     session_destroy();
     header("Location: login.php?loggedout");
     die(); 
-}  elseif (isset($_POST['goBack'])) {
+}  
+elseif (isset($_POST['goBack'])) {
     header("Location: admin.php");
     die(); 
 } 
+elseif (!isset($_GET['viewProfile'])) {
+    header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+    die();
+}
 include("Helpers/header.php");
 
 ?>
@@ -32,29 +38,26 @@ include("Helpers/header.php");
         <h1 style="color: black;">Profiles</h1>
         <form action="allProfile.php" method="post" class="form_css">
         <?php 
-            if (isset($_GET['viewProfile'])) {
-                $path = "uploads/";
+            $path = "uploads/";
 
-                $querry = $conn->query( "SELECT username, profile FROM profiles");
-                $getImage = mysqli_fetch_all($querry);
-                $defaultPath = "profile/default.png";
+            $querry = $conn->query( "SELECT username, profile FROM profiles");
+            $getImage = mysqli_fetch_all($querry);
+            $defaultPath = "profile/default.png";
 
-                for ($user = 0; $user < count($getImage); $user++) {
-                    $name = $getImage[$user][0];
-                    if ($name == "admin") {
-                        continue;
+            for ($user = 0; $user < count($getImage); $user++) {
+                $name = $getImage[$user][0];
+                if ($name == "admin") {
+                    continue;
+                }
+                if ($getImage[$user][1] !== NULL) {
+                    $file = $getImage[$user][1];
+                    echo "<div class='viewAll'>
+                    <h3 class='head'>#" . $getImage[$user][0] . "</h3>";
+                        echo "
+                        <img class='img' src=" . "'" . $file . "'" . "></img></div>";
+                } else {
+                        echo '<h3 class="head">#' . $getImage[$user][0] . '</h3><img class="img" src=' . "'" . $defaultPath . "'" . '></img>';
                     }
-                    if ($getImage[$user][1] !== NULL) {
-                        $file = $getImage[$user][1];
-                        echo "<div class='viewAll'>
-                        <h3>#" . $getImage[$user][0] . "</h3>";
-                            echo "
-                            <img class='img' src=" . "'" . $file . "'" . "></img></div>";
-                    } else {
-                            echo '<h3>#' . $getImage[$user][0] . '</h3><img class="img" src=' . "'" . $defaultPath . "'" . '></img>';
-                        } 
-                    }
-
                 }
     ?>
         </form>

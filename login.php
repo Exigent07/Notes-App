@@ -3,6 +3,7 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
+userAgent();
 session_start();
 if (isset($_SESSION['uid'])) {
     header("Location: bios.php");  
@@ -29,7 +30,7 @@ elseif (isset($_POST["login"])) {
                 increase_cookie($user);
                 echo "Success";
                 $ip = $_SERVER['REMOTE_ADDR'];
-                $querry = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
+                $query = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
                 insert($conn, "waf", array($user, $ip));
                 header("Location: bios.php");
                 die();
@@ -40,7 +41,9 @@ elseif (isset($_POST["login"])) {
             die();
         }
     } else {
-        echo '<p style="color: orange;">Error Occured</p>';
+        echo "invalid";
+        header("Location: login.php?invalid");
+        die();
     }
 }
 require_once('Helpers/header.php');

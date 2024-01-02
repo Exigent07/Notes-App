@@ -3,10 +3,11 @@ require_once('Helpers/connect.php');
 require_once('Helpers/encryption.php');
 require_once('Helpers/functions.php');
 
+userAgent();
 if (isset($_SESSION['uid'])) {
     $user = decrypt($_SESSION['uid']);
     $ip = $_SERVER['REMOTE_ADDR'];
-    $querry = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
+    $query = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
     header("Location: bios.php");   
     die();
 } 
@@ -81,7 +82,7 @@ if (isset($_POST["register"])) {
         die();
     } 
     else {
-        echo '<p style="color: orange;">Error: Error Occurred</p>';
+        header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
         die();
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
-// error_reporting(E_ALL);
-// ini_set('display_errors', true);
+error_reporting(E_ALL);
+ini_set('display_errors', true);
 
 function createTable($conn, $table) {
     $stmt = NULL;
@@ -13,7 +13,7 @@ function createTable($conn, $table) {
             password VARCHAR(255) NOT NULL
             )";
     }
-    elseif ($table === "pr                  ofiles") {
+    elseif ($table === "profiles") {
         $stmt = "CREATE TABLE IF NOT EXISTS profiles(
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(255) NOT NULL,
@@ -92,22 +92,31 @@ function logout($conn, $username) {
 }
 
 function query($conn, $query, $user) {
-    if ($conn && $query) {
-        $stmt = $conn->prepare($query);
-        if ($user) {
-            $stmt->bind_param("s", $user);
+    try {
+        if ($conn && $query) {
+            $stmt = $conn->prepare($query);
+            if ($user) {
+                $stmt->bind_param("s", $user);
+            }
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+            if ($conn->affected_rows === -1 && $conn->field_count === 0) {
+                return FALSE;
+            }
+            return $row;
         }
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $stmt->close();
-        if ($conn->affected_rows === -1 && $conn->field_count === 0) {
+        else {
             return FALSE;
         }
-        return $row;
-    }
-    else {
-        return FALSE;
+    } 
+       
+    catch (Exception $error) {
+        if (count($_SESSION) !== 0) {
+            session_destroy();
+        }
+        header("login.php?unauth");
     }
 }
 
@@ -140,6 +149,7 @@ function delete_or_update($conn, $query) {
 $conn = connect();
 
 if (!$conn) {
-    die('<p class="error" style="color: orange;">Error: Couldnt Connect </p>');
+    header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
+    die();
 }
 ?>
