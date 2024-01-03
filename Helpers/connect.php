@@ -23,7 +23,8 @@ function createTable($conn, $table) {
     elseif ($table === "waf") {
         $stmt = "CREATE TABLE IF NOT EXISTS waf(
             username VARCHAR(255) NOT NULL,
-            ip VARCHAR(255)
+            ip VARCHAR(255),
+            failed VARCHAR(255)
             )";
     }
     elseif ($table[0] === "notes") {
@@ -65,14 +66,16 @@ function insert($conn, $table, $value) {
         $stmt = $table && $value ? $conn->prepare("INSERT INTO `$table`(username, profile) VALUES(?, ?)") : NULL;
     }
     elseif ($table === "waf") {
-        $stmt = $table && $value ? $conn->prepare("INSERT INTO `$table`(username, ip) VALUES(?, ?)") : NULL;
+        $stmt = $table && $value ? $conn->prepare("INSERT INTO `$table`(username, ip, failed) VALUES(?, ?, ?)") : NULL;
     }
     else {
         $stmt = $table && $value ? $conn->prepare("INSERT INTO `$table`(note) VALUES(?)") : NULL;
     }
     if ($stmt !== NULL) {
-        if ($table === "users" || $table === "profiles" || $table === "waf") {
+        if ($table === "users" || $table === "profiles") {
             $stmt->bind_param("ss", $value[0], $value[1]);
+        } elseif ($table === "waf") {
+            $stmt->bind_param("ssi", $value[0], $value[1], $value[2]);
         } else {
             $stmt->bind_param("s", $value);
         }

@@ -1,14 +1,46 @@
 <?php 
 require_once('encryption.php');
+require_once('connect.php');
+
+function isBlocked($conn) {
+    $row = query($conn, "SELECT * FROM waf where username = 'blocked' and ip = ? ", $_SERVER['REMOTE_ADDR']);
+
+    if ($row) {
+        header($_SERVER["SERVER_PROTOCOL"] . " 403 Forbidden");
+        die();
+    }
+}
 
 function verify($encrypted, $password) {
     $encryptPassword = encrypt($password);
+    $conn = connect();
+
+    isBlocked($conn);
 
     if ($encryptPassword === $encrypted) {
         return TRUE;
     }
     else {
-        return FALSE;
+        if (isset($_COOKIE['failed'])) {
+            $value = decrypt($_COOKIE["failed"]);
+            $value_array = explode(",", $value);
+
+            if ($value_array[0] === $_SERVER['REMOTE_ADDR']) {
+                $fail = ((int)$value_array[1]);
+                if ($fail >= 5) {
+                    insert($conn, "waf", array("blocked", $_SERVER['REMOTE_ADDR'], $fail));
+                    header($_SERVER["SERVER_PROTOCOL"] . " 403 Forbidden");
+                    die();
+                } else {
+                    unset($_COOKIE["failed"]);
+                    setrawcookie("failed", encrypt($_SERVER['REMOTE_ADDR'] . "," . strval($fail + 1)), time() + 15);
+                    return FALSE;
+                }
+            }
+        } else {
+            setrawcookie("failed", encrypt($_SERVER['REMOTE_ADDR'] . ",1"), time() + 15);
+            return FALSE;
+        }
     }
 }
 

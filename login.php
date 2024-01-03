@@ -28,20 +28,18 @@ elseif (isset($_POST["login"])) {
             } else {
                 $_SESSION['uid'] = encrypt($user);
                 increase_cookie($user);
-                echo "Success";
                 $ip = $_SERVER['REMOTE_ADDR'];
-                $query = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
-                insert($conn, "waf", array($user, $ip));
+                // $query = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
+                insert($conn, "waf", array($user, $ip, 0));
                 header("Location: bios.php");
                 die();
             }
         } else {
-            echo "invalid";
             header("Location: login.php?invalid");
             die();
         }
     } else {
-        echo "invalid";
+        isBlocked($conn);
         header("Location: login.php?invalid");
         die();
     }
