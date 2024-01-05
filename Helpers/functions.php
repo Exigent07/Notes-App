@@ -68,6 +68,7 @@ function increase_cookie($user) {
 
 function sanitize($string) {
     $result = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+
     $char   = "/[!@#$%^*()_+={}\[\]:;,?\/~`-]/";
     $result = preg_replace($char, "", $result);
 

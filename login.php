@@ -14,10 +14,18 @@ elseif (isset($_SESSION['admin']) && $_SESSION['admin'] == decrypt('admin')) {
     die();
 } 
 elseif (isset($_POST["login"])) {
+    $user       = $_POST['username'];
+    $pass       = $_POST['password'];
+    $sql        = "SELECT password FROM users WHERE username = ?";
+    $row        = query($conn, $sql, $user);
+    $redos_user = redos($user);
+    $redos_pass = redos($pass);
+
+    if ($redos_pass || $redos_user) {
+        header("Location: login.php?invalid");
+        die();
+    }
     $user   = sanitize($_POST['username']);
-    $pass   = $_POST['password'];
-    $sql    = "SELECT password FROM users WHERE username = ?";
-    $row    = query($conn, $sql, $user);
     if ($row) {
         $verified = verify($row['password'], $pass);
         
