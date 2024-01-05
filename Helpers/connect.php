@@ -46,7 +46,7 @@ function createTable($conn, $table) {
 
 function connect() {
     $servername = "localhost";
-    $DbUser     = "ctf";
+    $DbUser     = "root";
     $password   = "password";
     $database   = "bi0s";
 

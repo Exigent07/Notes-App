@@ -11,6 +11,14 @@ function isBlocked($conn) {
     }
 }
 
+function redos($input) {
+    if (strlen($input) > 14) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
 function verify($encrypted, $password) {
     $encryptPassword = encrypt($password);
     $conn = connect();

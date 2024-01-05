@@ -25,10 +25,20 @@ if (isset($_POST["register"])) {
     $ext        = array("png");
     $fileSize   = $_FILES['file']['size'];
     $name       = time() . ".png";
+    $pass       = $_POST['password'];
+
+    $redos_user = redos($user);
+    $redos_pass = redos($pass);
+
+    if ($redos_pass || $redos_user) {
+        setcookie("error", encrypt("Too long!"));
+        header("Location: register.php?error");
+        die();
+    }
 
     unset($_COOKIE['error']);
 
-    if (!preg_match($regex, $_POST['password'])) {
+    if (!preg_match($regex, $pass)) {
         setcookie("error", encrypt("Password Not Strong!"));
         header("Location: register.php?error");
         die();
@@ -65,7 +75,7 @@ if (isset($_POST["register"])) {
 
             if ($isInsertedUser && $isInsertedProfile) {
                 mkdir("profile/" . $user);
-                move_uploaded_file($image, $Path);   
+                move_uploaded_file($image, $Path);
                 header("Location: login.php?registered");
                 die();
             }
