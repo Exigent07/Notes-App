@@ -57,57 +57,65 @@ require_once('Helpers/header.php');
         
         $fileName = htmlentities($_FILES["file"]["name"], ENT_QUOTES, 'UTF-8');
         $fileRename = htmlentities($_POST['fileName'], ENT_QUOTES, 'UTF-8');
-        $match = preg_match($check, $fileRename);
+        $redos_rename = redos($fileRename);
+        $redos_name = redos($fileName);
 
-        if ($match || pathinfo($fileRename, PATHINFO_EXTENSION) !== "txt") {
+        if ($redos_name || $redos_rename) {
             echo '<p style="color: black;" class = "error para">Upload failed</p>';
-        } else {
-            $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
-            $renamePathFile = $path . $username . "/" . $fileRename;
+        }
+        else {    
+            $match = preg_match($check, $fileRename);
 
-            if ($fileType == 'txt') {
-                $image = $_FILES['file']['tmp_name'];
-                $content = file_get_contents($image);
-                $options = array("notes", $username);
-                $exists = FALSE;
-                createTable($conn, $options);
-                $sql = "SELECT * FROM `$username` WHERE id = ?";
-                $checkFile = True; $i = 1;
-                
-                while ($checkFile !== NULL) {
-                    $checkFile = query($conn, $sql, $i);
-                
-                    if ($checkFile !== NULL) {
-                        $checkName = $checkFile['note'];
-                
-                        if ($checkName === $renamePathFile) {
-                            $exists = TRUE;
+            if ($match || pathinfo($fileRename, PATHINFO_EXTENSION) !== "txt") {
+                echo '<p style="color: black;" class = "error para">Upload failed</p>';
+            } else {
+                $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
+                $renamePathFile = $path . $username . "/" . $fileRename;
+
+                if ($fileType == 'txt') {
+                    $image = $_FILES['file']['tmp_name'];
+                    $content = file_get_contents($image);
+                    $options = array("notes", $username);
+                    $exists = FALSE;
+                    createTable($conn, $options);
+                    $sql = "SELECT * FROM `$username` WHERE id = ?";
+                    $checkFile = True; $i = 1;
+                    
+                    while ($checkFile !== NULL) {
+                        $checkFile = query($conn, $sql, $i);
+                    
+                        if ($checkFile !== NULL) {
+                            $checkName = $checkFile['note'];
+                    
+                            if ($checkName === $renamePathFile) {
+                                $exists = TRUE;
+                                break;
+                            }
+                            $i++;
+                        } else {
                             break;
                         }
-                        $i++;
-                    } else {
-                        break;
                     }
-                }
 
-                if ($exists === FALSE) {
-                    if (!is_dir($path . $username)) {
-                        mkdir($path . $username);
+                    if ($exists === FALSE) {
+                        if (!is_dir($path . $username)) {
+                            mkdir($path . $username);
+                        }
+                        $inserted = insert($conn, sanitize($username), $renamePathFile);
+                        if ($inserted) {
+                            move_uploaded_file($image, $renamePathFile);
+                            echo '<p style="color: black;" class = "upload para">Note uploaded</p>';
+                        } 
+                        else {
+                            echo '<p style="color: black;" class = "error para">Upload failed</p>';
+                        }
+                    } else {
+                        echo '<p style="color: black;" class = "upload para">Filename exists</p>';
                     }
-                    $inserted = insert($conn, sanitize($username), $renamePathFile);
-                    if ($inserted) {
-                        move_uploaded_file($image, $renamePathFile);
-                        echo '<p style="color: black;" class = "upload para">Note uploaded</p>';
-                    } 
-                    else {
-                        echo '<p style="color: black;" class = "error para">Upload failed</p>';
-                    }
-                } else {
-                    echo '<p style="color: black;" class = "upload para">Filename exists</p>';
                 }
-            }
-            else {
-                echo '<p style="color: black;" class = "upload para">Not a txt file!</p>';
+                else {
+                    echo '<p style="color: black;" class = "upload para">Not a txt file!</p>';
+                }
             }
         }
     } 
