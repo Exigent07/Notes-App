@@ -20,7 +20,7 @@ if (isset($_POST["register"])) {
     $file       = basename($_FILES["file"]["name"]);
     $image      = $_FILES['file']['tmp_name'];
     $user       = htmlspecialchars($_POST['username'], ENT_QUOTES, 'UTF-8');
-    $regex      = "/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/"; 
+    $regex      = "/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/"; 
     $char       = "/[!@#$%^&*()_+={}\[\]:;<>,.?\/~`'\"-]/";
     $ext        = array("png");
     $fileSize   = $_FILES['file']['size'];

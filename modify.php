@@ -111,14 +111,10 @@ require_once("Helpers/header.php");
 
                 while ($result !== NULL) {
                     $result = query($conn, $sqlQuery, $i);
-                    
                     if ($result !== NULL) {
                         $users++;
-                        echo "<p class='para' style='color: black; font-size: 18px;'>" . $i . ". " . $result["username"] . "</p>";
+                        echo "<p class='para' style='color: black; font-size: 18px;'><span style='color: red; font-size: 20px;'>" . $i . ". </span>" . $result["username"] . "</p>";
                         $i++;
-                    }
-                    else {
-                        break;
                     }
                 }
 
