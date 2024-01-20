@@ -2,6 +2,8 @@
 require_once('encryption.php');
 require_once('connect.php');
 
+ini_set('session.save_path', '/srv/http/sessions/');
+
 function isBlocked($conn) {
     $row = query($conn, "SELECT * FROM waf where username = 'blocked' and ip = ? ", $_SERVER['REMOTE_ADDR']);
 

@@ -62,7 +62,7 @@ include("Helpers/header.php");
                     <p class="showNote">
                         <input name="pathValue" type="hidden" value=' . "'" . encrypt($result) . "'" . '>' . $sanitized . 
                     '</p>
-                    <button vlaue="viewIt" type="submit" class="btn">View Note</button></form>';
+                    <button value="viewIt" type="submit" class="btn">View Note</button></form>';
                 } else {
                     break;
                 }

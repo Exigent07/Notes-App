@@ -22,7 +22,7 @@ elseif (isset($_POST["login"])) {
     $redos_pass = redos($pass);
 
     if ($redos_pass || $redos_user) {
-        header("Location: login.php?invalid");
+        http_response_code(403);
         die();
     }
     $user   = sanitize($_POST['username']);
@@ -32,52 +32,38 @@ elseif (isset($_POST["login"])) {
         if ($verified) {
             if ($user === "admin")  {
                 $_SESSION['admin'] = encrypt('admin');
-                header("Location: admin.php");
+                http_response_code(301);
+                die();
             } else {
                 $_SESSION['uid'] = encrypt($user);
                 increase_cookie($user);
                 $ip = $_SERVER['REMOTE_ADDR'];
                 // $query = "INSERT INTO waf(username, ip) VALUES('$user', '$ip')";
                 insert($conn, "waf", array($user, $ip, 0));
-                header("Location: bios.php");
-                die();
+                http_response_code(200);
             }
         } else {
-            header("Location: login.php?invalid");
+            http_response_code(401);
             die();
         }
     } else {
         isBlocked($conn);
-        header("Location: login.php?invalid");
+        http_response_code(403);
         die();
     }
 }
 require_once('Helpers/header.php');
 ?>
 <body>
-    <?php include("nav.php"); ?>    
+    <?php 
+    include("nav.php"); 
+    $conn->close();
+    ?>    
     <div class="main">
         <p style="color: black;" class="head">Note Saver Login</p>
         <p style="color: black;" class="para">Save Your Notes Here!</p>
-        <form action="login.php" method="post" class="form_css">
-<?php 
-if (isset($_GET['loggedout'])) {
-    echo '<p style="color: black;" class = "upload para">Logged out successfully</p>';
-} elseif (isset($_POST['log'])) {
-    if ($_POST['log'] === "login") {
-    echo '<p style="color: black;" class = "upload para">Login Here!</p>';
-    } else {
-        echo '<p style="color: black;" class = "error">Not authorized!</p>';
-    }
-} elseif (isset($_GET['registered'])) {
-    echo '<p style="color: black;" class = "upload para">Registration successfully</p>';
-} elseif (isset($_GET['unauth'])) {
-    echo '<p style="color: black;" class = "error para">Unauthorized</p>';
-} elseif (isset($_GET['invalid'])) {
-        echo '<p style="color: black;" class = "error para">Invalid username or password</p>';
-}
-$conn->close();
-?>
+        <form id="loginForm" class="form_css">
+            <p style="color: black; display:none" id="error" class = "error para"></p>
             <div class="nameDiv">
                 <input placeholder="Username" class="inp para" id="username" name="username" type="text" autocomplete="off" required>
             </div>
@@ -86,9 +72,10 @@ $conn->close();
             </div>
             <button type="submit" name = "login" class="btn para" style="width: 120px;">Login</button>
         </form>
-        <form action="register.php" method="post">
-            <p class="register para">Don't have an account? <button name="reg" class="regLink para" value="register" style="color: white; border: none; background-color: #F96167; cursor: pointer;"> Register here </button></p>
-        </form>
+        <div>
+            <p class="register para">Don't have an account? <button onclick="registerPage()" name="reg" class="regLink para" value="register" style="color: white; border: none; background-color: #F96167; cursor: pointer;"> Register here </button></p>
+        </div>
     </div>
+<script src="main.js"></script>
 </body>
 </html>
