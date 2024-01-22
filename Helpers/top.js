@@ -1,15 +1,22 @@
 const { JSDOM } = require('jsdom');
 
-const url = 'http://localhost/bi0s/tips.html';
+const url = 'https://amberstudent.com/blog/post/best-note-taking-apps-every-student-needs';
 
-async function getTop() {
-    const response = await fetch(url);
+async function top() {
+    const response = await fetch(url, {method: "GET"});
     const text = await response.text();
     const DOM = new JSDOM(text);
     const document = DOM.window.document;
-    const top = document.querySelectorAll('button');
 
-    console.log(top);
+    const top = document.getElementsByClassName('rich-text-block dropdown-link-3 rich-text-faq rich-text-blog w-richtext')[0];
+    
+    let top_list = [];
+
+    for (let index = 1; index <= 5; index++) {
+        top_list.push(top.querySelectorAll('p')[index].innerHTML);   
+    }
+
+    console.log(top_list.join(','));
 }
 
-getTop();
+top();

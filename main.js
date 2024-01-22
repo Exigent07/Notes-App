@@ -170,15 +170,14 @@ function  notes() {
     const all = document.querySelectorAll('button');
     const notes = document.querySelector('.notes');
     const iframe = document.querySelectorAll('iframe')[0];
-    const xhr = new XMLHttpRequest;
+    const show = document.getElementById('fetch_display');
 
     iframe.style.display = 'block';
     all.forEach(btn => {
         btn.classList.remove('active');
     });
-
+    show.style.display = 'none';
     notes.setAttribute('class', 'notes active')
-
 
     iframe.setAttribute('src', 'https://kidshealth.org/en/teens/take-notes.html');
 }
@@ -187,8 +186,9 @@ function  format() {
     const all = document.querySelectorAll('button');
     const format = document.querySelector('.format');
     const iframe = document.querySelectorAll('iframe')[0];
-    const xhr = new XMLHttpRequest;
+    const show = document.getElementById('fetch_display');
 
+    show.style.display = 'none';
     iframe.style.display = 'block';
     all.forEach(btn => {
         btn.classList.remove('active');
@@ -203,8 +203,10 @@ function  fetchTop() {
     const all = document.querySelectorAll('button');
     const btn = document.querySelector('.fetch');
     const iframe = document.querySelectorAll('iframe')[0];
+    const show = document.getElementById('fetch_display');
     const xhr = new XMLHttpRequest;
 
+    show.style.display = 'flex';
     iframe.style.display = 'none';
     all.forEach(button => {
         button.classList.remove('active');
@@ -212,5 +214,38 @@ function  fetchTop() {
 
     btn.setAttribute('class', 'fetch active')
 
+    if (!show.querySelectorAll('p')[0]) {
+        const p = document.createElement('p');
+        p.innerHTML = 'Loading....';
+        show.appendChild(p);
+        const form = new FormData();
+        form.append('fetch', 'fetch');
     
+        xhr.open('POST', 'http://localhost/bi0s/fetch.php');
+    
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    console.log("Fetched");
+                    let top = xhr.responseText;
+                    let parsed = JSON.parse(top);
+                    show.removeChild(p);
+                    for (let index = 1; index <= Object.keys(parsed).length; index++) {
+                        const p = document.createElement('p');
+                        p.innerHTML = parsed[`${index}`];
+                        show.appendChild(p);
+                    }
+                } else {
+                    console.log("Failed:", xhr.status);
+                }
+            }
+        }
+    
+        xhr.send(form);
+    }
+
+}
+
+function home() {
+    document.location.href = "http://localhost/bi0s/login.php";
 }

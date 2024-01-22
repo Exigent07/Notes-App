@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" >
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; child-src https://kidshealth.org/en/teens/take-notes.html https://becomeawritertoday.com/note-taking-cornell-method/; connect-src https://toolfinder.co/lists/new-note-taking-apps-2023;" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; child-src https://kidshealth.org/en/teens/take-notes.html https://becomeawritertoday.com/note-taking-cornell-method/; connect-src http://localhost/bi0s/fetch.php;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tips</title>
     <style>
@@ -40,7 +40,7 @@
         .heading {
             color: #ff6600;
             font-family: 'Roboto', 'Sans-serif';
-            font-size: 18;
+            font-size: 18px;
         }
 
         .active {
@@ -81,6 +81,24 @@
             border-radius: 12px;
             border: 1px solid black;
         }
+
+        #fetch_display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background-color: #333333;
+            border-radius: 15px;
+            border: 1px solid #ff6600;
+            height: 35dvh;
+            width: 25dvw;
+        }
+
+        #fetch_display p {
+            color: antiquewhite;
+            font-size: 25px;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -91,9 +109,11 @@
         <div class="select">
             <button class="notes" onclick="notes()">Notes Tips</button>
             <button class="format" onclick="format()">Best Format</button>
-            <button class="fetch" onclick="fetchTop()">Top 10</button>
+            <button class="fetch" onclick="fetchTop()">Top 5</button>
+            <button class="fetch" onclick="home()">Home</button>
         </div>
-        <iframe src="" style="display: none;" title="Tips"></iframe>
+        <iframe src="" style="display: none;" title="Tips" sandbox></iframe>
+        <div id="fetch_display" style="display: none;"></div>
         <div style="height: 25px;"></div>
     </div>
 <script src="main.js"></script>
