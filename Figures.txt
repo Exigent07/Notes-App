@@ -1,7 +1,0 @@
-# Found that the php file continued to execute even after redirection that is why curl worked and fixed it by adding a die().
-# Found that RCE vuln is because of file upload and fixed it using adding a check.
-# Found sqli in admin page.
-# Found that if you change the file name in burp to php it will upload it, fixed by adding check and also renaming the file to unix_time.png
-# Added IP tracking.
-# Added username and password len check.
-# Added blocking feature to app.
