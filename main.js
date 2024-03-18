@@ -1,14 +1,16 @@
+// Adding prevent default to prevent the page from reloading.
+
 document.addEventListener('DOMContentLoaded', () => {
 
     if (document.getElementById('bi0sForm')) {
-        const form = document.getElementById('bi0sForm').addEventListener('submit', (event) => {
-            event.preventDefault();
-            upload();
+        document.getElementById('bi0sForm').addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevents the default behaviour
+            upload(); // Calling the upload function
         });
     }
 
     if (document.getElementById('loginForm')) {
-        const form = document.getElementById('loginForm').addEventListener('submit', (event) => {
+        document.getElementById('loginForm').addEventListener('submit', (event) => {
             event.preventDefault();
             login();
         });
@@ -21,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (document.getElementById('registerForm')) {
-        const form = document.getElementById('registerForm').addEventListener('submit', (event) => {
+        document.getElementById('registerForm').addEventListener('submit', (event) => {
             event.preventDefault();
             register();
         });
@@ -40,7 +42,7 @@ function login() {
     form.append('password', password);
     form.append('login', 123);
 
-    var xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
 
     xhr.open('POST', 'http://localhost/bi0s/login.php');
 
@@ -79,7 +81,7 @@ function register() {
     form.append('file', file);
     form.append('register', 123);
 
-    var xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
 
     xhr.open('POST', 'http://localhost/bi0s/register.php');
 
@@ -125,7 +127,7 @@ function upload() {
     form.append('fileName', fileName);
     form.append('submitFile', 'upload');
 
-    var xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
 
     xhr.open('POST', 'http://localhost/bi0s/bios.php');
 
@@ -216,7 +218,7 @@ function  fetchTop() {
 
     if (!show.querySelectorAll('p')[0]) {
         const p = document.createElement('p');
-        p.innerHTML = 'Loading....';
+        p.innerText = 'Loading....';
         show.appendChild(p);
         const form = new FormData();
         form.append('fetch', 'fetch');
@@ -232,7 +234,7 @@ function  fetchTop() {
                     show.removeChild(p);
                     for (let index = 1; index <= Object.keys(parsed).length; index++) {
                         const p = document.createElement('p');
-                        p.innerHTML = parsed[`${index}`];
+                        p.innerText = parsed[`${index}`];
                         show.appendChild(p);
                     }
                 } else {
